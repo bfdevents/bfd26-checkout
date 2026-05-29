@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BFD26 Brisbane Check-Out</title>
+
+<style>
+body { 
+    font-family: Arial; 
+    text-align: center; 
+    margin-top: 50px; 
+    background:#f9f9f9; 
+}
+
+.logo { 
+    max-width:150px; 
+    margin-bottom:20px; 
+}
+
+input, button { 
+    padding:10px; 
+    margin:10px; 
+    width:220px; 
+    border-radius:5px; 
+}
+
+button { 
+    background:#3498db; 
+    color:white; 
+    border:none; 
+    cursor:pointer; 
+}
+</style>
+</head>
+
+<body>
+
+<div id="paused" style="display:none;"></div>
+
+<div id="app">
+  <img class="logo" src="https://242329549.fs1.hubspotusercontent-na2.net/hubfs/242329549/crm-properties-file-values/BFD26%20FINAL%20Logo.png">
+
+  <h1>BFD26 Brisbane Check-In</h1>
+  <h2 id="eventTitle">May 30, 2026</h2>
+
+  <form id="form">
+    <input type="text" id="fname" placeholder="First Name" required>
+    <input type="text" id="lname" placeholder="Last Name" required><br>
+    <button type="submit">Continue</button>
+  </form>
+
+  <p id="status"></p>
+</div>
+
+<script>
+// =======================
+// CONFIG
+// =======================
+const webhookURL = "https://hook.eu1.make.com/dspa2fhez2mfqyttv84fdb6hf6gejz4q";
+
+// =======================
+// SINGLE EVENT (EDIT ONLY THIS)
+// =======================
+const event = {
+    day: "Saturday",
+    date: "2026-05-29",
+    start: { hour: 7, minute: 0 },
+    end: { hour: 16, minute: 0 }
+};
+
+// =======================
+// BRISBANE TIME HELPERS
+// =======================
+function getBrisbaneNow(){
+    return new Date(
+        new Date().toLocaleString("en-US", { 
+            timeZone: "Australia/Brisbane" 
+        })
+    );
+}
+
+function getBrisbaneDateString(d){
+    return d.toLocaleDateString("en-CA", { 
+        timeZone: "Australia/Brisbane" 
+    });
+}
+
+function getMinutes(d){
+    return d.getHours()*60 + d.getMinutes();
+}
+
+function formatDate(dateStr){
+    return new Date(dateStr).toLocaleDateString("en-AU", {
+        year: "numeric",
+        month: "long",
+        day: "numeric"
+    });
+}
+
+function formatTime(mins){
+    const h = Math.floor(mins/60);
+    const m = mins%60;
+    const ampm = h>=12 ? "PM":"AM";
+    const h12 = h%12 || 12;
+
+    return `${h12}:${String(m).padStart(2,'0')} ${ampm}`;
+}
+
+// =======================
+// ACCESS CONTROL
+// =======================
+function checkAccess(){
+
+    const app = document.getElementById("app");
+    const paused = document.getElementById("paused");
+
+    app.style.display = "none";
+    paused.style.display = "none";
+
+    const br = getBrisbaneNow();
+    const today = getBrisbaneDateString(br);
+    const nowMinutes = getMinutes(br);
+
+    // check if event matches today
+    if(today !== event.date){
+        block(
+            `Check-in will be available on ${formatDate(event.date)} from ${formatTime(event.start.hour*60+event.start.minute)} - ${formatTime(event.end.hour*60+event.end.minute)} (Brisbane Time).`
+        );
+        return;
+    }
+
+    const start = event.start.hour*60 + event.start.minute;
+    const end = event.end.hour*60 + event.end.minute;
+
+    if(nowMinutes >= start && nowMinutes < end){
+        app.style.display = "block";
+    } else {
+        block(
+            `Available on ${formatDate(event.date)}, ${formatTime(start)} - ${formatTime(end)} (Brisbane Time).`
+        );
+    }
+}
+
+// =======================
+// BLOCK UI
+// =======================
+function block(msg){
+    document.getElementById("app").style.display = "none";
+
+    const p = document.getElementById("paused");
+
+    p.style.display = "block";
+
+    p.innerHTML = `
+        <h1>We’re currently between sessions.</h1>
+        <h3>We’ll be ready to greet you soon!</h3>
+        <p>${msg}</p>
+    `;
+}
+
+// =======================
+// FORM SUBMIT (UTC)
+// =======================
+document.getElementById("form").addEventListener("submit", e=>{
+    e.preventDefault();
+
+    const fname = document.getElementById("fname").value.trim();
+    const lname = document.getElementById("lname").value.trim();
+
+    if(!fname || !lname){
+        alert("Enter name");
+        return;
+    }
+
+    document.getElementById("status").textContent = "Submitting...";
+
+    fetch(webhookURL,{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({
+            fname,
+            lname,
+            day: event.day,
+            action: "check-out",
+            timestamp: new Date().toISOString()
+        })
+    })
+    .then(()=>{
+        document.body.innerHTML = `
+            <h1>Check-In Complete</h1>
+            <p>Thank you ${fname} ${lname}!</p>
+        `;
+    })
+    .catch(()=>{
+        alert("Error. Try again.");
+        document.getElementById("status").textContent = "";
+    });
+});
+
+// =======================
+checkAccess();
+setInterval(checkAccess, 30000);
+</script>
+
+</body>
+</html>
