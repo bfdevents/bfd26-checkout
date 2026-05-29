@@ -41,7 +41,7 @@ button {
 <div id="app">
   <img class="logo" src="https://242329549.fs1.hubspotusercontent-na2.net/hubfs/242329549/crm-properties-file-values/BFD26%20FINAL%20Logo.png">
 
-  <h1>BFD26 Brisbane Check-In</h1>
+  <h1>BFD26 Brisbane Check-Out</h1>
   <h2 id="eventTitle">May 30, 2026</h2>
 
   <form id="form">
@@ -125,7 +125,7 @@ function checkAccess(){
     // check if event matches today
     if(today !== event.date){
         block(
-            `Check-in will be available on ${formatDate(event.date)} from ${formatTime(event.start.hour*60+event.start.minute)} - ${formatTime(event.end.hour*60+event.end.minute)} (Brisbane Time).`
+            `Check-out will be available on ${formatDate(event.date)} from ${formatTime(event.start.hour*60+event.start.minute)} - ${formatTime(event.end.hour*60+event.end.minute)} (Brisbane Time).`
         );
         return;
     }
